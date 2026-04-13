@@ -24,6 +24,14 @@
         { "url": "http://127.0.0.1/*" },
         { "url": "http://127.0.0.1:*/*" }
       ]
+    },
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [{ "path": "$DOWNLOAD/**" }]
+    },
+    {
+      "identifier": "fs:allow-write-file",
+      "allow": [{ "path": "$DOWNLOAD/**" }]
     }
   ]
 }

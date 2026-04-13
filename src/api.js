@@ -98,6 +98,28 @@ async function request(method, path, body = null, extraHeaders = {}) {
   return resp.json();
 }
 
+/**
+ * 原始 fetch — 返回 Response 对象，不自动解析为 JSON
+ * 用于 testScript 等可能返回文件流的接口
+ */
+async function rawRequest(method, path, body = null, extraHeaders = {}) {
+  const url = `${BASE_URL}${path}`;
+  const headers = {
+    'X-Groovy-Token': API_KEY,
+    'Content-Type': 'application/json',
+    ...extraHeaders,
+  };
+  const opts = { method, headers };
+  if (body !== null) {
+    opts.body = JSON.stringify(body);
+  }
+  const resp = await smartFetch(url, opts);
+  if (!resp.ok) {
+    throw new Error(`HTTP ${resp.status}`);
+  }
+  return resp; // 返回原始 Response，由调用方按 Content-Type 处理
+}
+
 /** ① 脚本列表 */
 export async function listScripts(category, projectCode) {
   let path = '/api/groovy/script/list?';
@@ -126,13 +148,13 @@ export async function deleteScript(id) {
   return request('DELETE', `/api/groovy/script/${id}`);
 }
 
-/** ⑦ 测试执行（额外带 Authorization header 用于获取用户信息） */
+/** ⑥ 测试执行（返回原始 Response，支持 JSON 和文件下载两种响应） */
 export async function testScript(bizCode, params, track = false) {
   const extra = {};
   if (AUTH_TOKEN) {
     extra['Authorization'] = AUTH_TOKEN;
   }
-  return request('POST', '/api/groovy/script/test', {
+  return rawRequest('POST', '/api/groovy/script/test', {
     bizCode,
     params,
     track,

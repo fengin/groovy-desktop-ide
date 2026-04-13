@@ -67,7 +67,8 @@ jobs:
             ## Groovy Desktop IDE ${{ github.ref_name }}
 
             ### 下载说明
-            - **Windows**: 下载 `.exe` 或 `.msi` 安装包
+            - **Windows 免安装版（推荐）**: 下载 `Groovy.Desktop.IDE_portable.zip`，解压后双击 exe 直接运行
+            - **Windows 安装包**: 下载 `_setup.exe`，双击安装到系统
             - **macOS (Apple Silicon)**: 下载 `aarch64.dmg`
             - **macOS (Intel)**: 下载 `x64.dmg`
             - **Linux**: 下载 `.AppImage` 或 `.deb`
@@ -76,3 +77,30 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: --target ${{ matrix.target }}
+
+      # Windows: 额外上传免安装便携版 (zip)
+      - name: Package portable zip (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          $exePath = "src-tauri/target/${{ matrix.target }}/release/Groovy Desktop IDE.exe"
+          if (Test-Path $exePath) {
+            $version = "${{ github.ref_name }}"
+            $zipName = "Groovy.Desktop.IDE_${version}_portable_x64.zip"
+            Compress-Archive -Path $exePath -DestinationPath $zipName
+            Write-Output "PORTABLE_ZIP=$zipName" >> $env:GITHUB_OUTPUT
+            Write-Output "Portable zip created: $zipName"
+          } else {
+            Write-Output "WARNING: exe not found at $exePath"
+            ls -R src-tauri/target/${{ matrix.target }}/release/*.exe
+          }
+        id: portable
+
+      - name: Upload portable zip to Release (Windows)
+        if: matrix.platform == 'windows-latest' && steps.portable.outputs.PORTABLE_ZIP
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.portable.outputs.PORTABLE_ZIP }}
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
