@@ -82,19 +82,20 @@ jobs:
       - name: Package portable zip (Windows)
         if: matrix.platform == 'windows-latest'
         shell: pwsh
+        id: portable
         run: |
-          $exePath = "src-tauri/target/${{ matrix.target }}/release/Groovy Desktop IDE.exe"
+          $exePath = "src-tauri/target/${{ matrix.target }}/release/groovy-desktop-ide.exe"
+          Write-Output "Looking for exe at: $exePath"
           if (Test-Path $exePath) {
             $version = "${{ github.ref_name }}"
             $zipName = "Groovy.Desktop.IDE_${version}_portable_x64.zip"
             Compress-Archive -Path $exePath -DestinationPath $zipName
             Write-Output "PORTABLE_ZIP=$zipName" >> $env:GITHUB_OUTPUT
-            Write-Output "Portable zip created: $zipName"
+            Write-Output "Portable zip created: $zipName ($($(Get-Item $zipName).Length / 1MB) MB)"
           } else {
             Write-Output "WARNING: exe not found at $exePath"
-            ls -R src-tauri/target/${{ matrix.target }}/release/*.exe
+            Get-ChildItem -Path "src-tauri/target/${{ matrix.target }}/release/" -Filter "*.exe" | ForEach-Object { Write-Output $_.FullName }
           }
-        id: portable
 
       - name: Upload portable zip to Release (Windows)
         if: matrix.platform == 'windows-latest' && steps.portable.outputs.PORTABLE_ZIP
